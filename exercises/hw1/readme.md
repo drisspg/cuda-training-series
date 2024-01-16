@@ -19,45 +19,9 @@ Note the use of `cudaDeviceSynchronize()` after the kernel launch. In CUDA, kern
 
 After editing the code, compile it using the following:
 
+``` Shell
+nvcc -gencode arch=compute_90,code=sm_90 hello.cu -o bin/hello
 ```
-module load cuda
-nvcc -o hello hello.cu
-```
-
-The module load command selects a CUDA compiler for your use. The module load command only needs to be done once per session/login. `nvcc` is the CUDA compiler invocation command. The syntax is generally similar to gcc/g++.
-
-If you have trouble, you can look at `hello_solution.cu` for a complete example.
-
-To run your code at OLCF on Summit, we will use an LSF command:
-
-```
-bsub -W 10 -nnodes 1 -P <allocation_ID> -Is jsrun -n1 -a1 -c1 -g1 ./hello
-```
-
-Alternatively, you may want to create an alias for your `bsub` command in order to make subsequent runs easier:
-
-```
-alias lsfrun='bsub -W 10 -nnodes 1 -P <allocation_ID> -Is jsrun -n1 -a1 -c1 -g1'
-lsfrun ./hello
-```
-
-To run your code at NERSC on Cori, we can use Slurm:
-
-```
-module load esslurm
-srun -C gpu -N 1 -n 1 -t 10 -A m3502 --gres=gpu:1 -c 10 ./hello
-```
-
-Allocation `m3502` is a custom allocation set up on Cori for this training series, and should be available to participants who registered in advance until January 18, 2020. If you cannot submit using this allocation, but already have access to another allocation that grants access to the Cori GPU nodes, you may use that instead.
-
-If you prefer, you can instead reserve a GPU in an interactive session, and then run an executable any number of times while the Slurm allocation is active:
-
-```
-salloc -C gpu -N 1 -t 60 -A m3502 --gres=gpu:1 -c 10
-srun -n 1 ./hello
-```
-
-Note that you only need to `module load esslurm` once per login session; this is what enables you to submit to the Cori GPU nodes.
 
 ## **2. Vector Add**
 
