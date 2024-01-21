@@ -17,7 +17,7 @@
     } while (0)
 
 
-const int DSIZE = 4096;
+const int DSIZE = 8192;
 const int block_size = 16;  // CUDA maximum is 1024 *total* threads in block
 const float A_val = 1.0f;
 const float B_val = 2.0f;
@@ -25,14 +25,20 @@ const float B_val = 2.0f;
 // matrix multiply (naive) kernel: C = A * B
 __global__ void mmul(const float *A, const float *B, float *C, int ds) {
 
-  int idx = threadIdx.x+blockDim.x*blockIdx.x; // create thread x index
-  int idy = threadIdx.y+blockDim.y*blockIdx.y; // create thread y index
+  int row_idx = threadIdx.x+blockDim.x*blockIdx.x; // create thread x index
+  int col_idx = threadIdx.y+blockDim.y*blockIdx.y; // create thread y index
 
-  if ((idx < ds) && (idy < ds)){
+
+  if ((row_idx < ds) && (col_idx < ds)){
     float temp = 0;
-    for (int i = 0; i < ds; i++)
-      temp += A[FIXME*ds+i] * B[i*ds+FIXME];   // dot product of row and column
-    C[idy*ds+idx] = temp;
+    for (int i = 0; i < ds; i++){
+      int row_stride = ds;
+      int col_sride = 1;
+      int a_index = row_idx*row_stride + i*col_sride;
+      int b_index = col_idx*col_sride + i*row_stride;
+      temp += A[a_index] * B[b_index];   // dot product of row and column
+    }
+    C[col_idx*ds+row_idx] = temp;
   }
 }
 
@@ -45,6 +51,7 @@ int main(){
   double t1sum=0.0;
   double t2sum=0.0;
 
+  constexpr auto ceil_div = [](int a, int b){return a/b + (a%b !=0);};
   // start timing
   t0 = clock();
 
@@ -74,7 +81,7 @@ int main(){
 
   // Launch kernel
   dim3 block(block_size, block_size);  // dim3 variable holds 3 dimensions
-  dim3 grid((DSIZE+block.x-1)/block.x, (DSIZE+block.y-1)/block.y);
+  dim3 grid(ceil_div(DSIZE, block.x), ceil_div(DSIZE, block.y));
   mmul<<<grid, block>>>(d_A, d_B, d_C, DSIZE);
   cudaCheckErrors("kernel launch failure");
 
