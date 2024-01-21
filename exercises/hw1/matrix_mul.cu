@@ -38,7 +38,7 @@ __global__ void mmul(const float *A, const float *B, float *C, int ds) {
       int b_index = col_idx*col_sride + i*row_stride;
       temp += A[a_index] * B[b_index];   // dot product of row and column
     }
-    C[col_idx*ds+row_idx] = temp;
+    C[row_idx*ds + col_idx] = temp;
   }
 }
 
